@@ -68,6 +68,8 @@
 
 (define pieces-to-render-at-a-time 40)
 
+(define tube-segments 16)
+
 (define earth
   (with-material
    (material #:ambient 0.1
@@ -180,7 +182,7 @@
          (with-color
           (rgba "blue")
           (parametric-cylinder
-           #:samples 1
+           #:samples 1 #:segments tube-segments
            (match-lambda
              [0.0 (values pos dir (dir- new-dir dir) 1/2)]
              [1.0 (values new-pos new-dir (dir- new-dir dir) 1/2)])
