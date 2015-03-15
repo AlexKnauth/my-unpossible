@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require pict3d
-         pict3d/universe
+         (only-in pict3d/universe big-bang3d)
          racket/stream
          racket/match
          racket/local
