@@ -1,14 +1,18 @@
 #lang typed/racket/base
 
-(provide my-point-at)
+(provide from-to my-point-at)
 
 (require pict3d)
 
+(: from-to : [Affine Affine -> Affine])
+(define (from-to t1 t2)
+  (affine-compose t2 (affine-inverse t1)))
+
 (: my-point-at : [Pos (U Pos Dir) Pos (U Pos Dir) [#:normalize? Boolean] -> Affine])
 (define (my-point-at v1 v2 v3 v4 #:normalize? [normalize? #t])
-  (affine-compose
-   (point-at v3 v4 #:normalize? normalize?)
-   (affine-inverse (point-at v1 v2 #:normalize? normalize?))))
+  (from-to
+   (point-at v1 v2 #:normalize? normalize?)
+   (point-at v3 v4 #:normalize? normalize?)))
 
 (module* test racket/base
   (require (submod "..") rackunit pict3d racket/match syntax/parse/define (for-syntax racket/base))
