@@ -41,12 +41,12 @@
   (angles->dir (+ yθ ∆yθ) (+ zθ ∆zθ)))
 
 (module+ test
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir   0   0)) (dir  1  0  0) 1e-10)
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir  90   0)) (dir  0  1  0) 1e-10)
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir 180   0)) (dir -1  0  0) 1e-10)
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir -90   0)) (dir  0 -1  0) 1e-10)
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir   0  90)) (dir  0  0  1) 1e-10)
-  (check-within (dir+∆θdir (dir 1 0 0) (∆θdir   0 -90)) (dir  0  0 -1) 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir   0   0)) +x 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir  90   0)) +y 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir 180   0)) -x 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir -90   0)) -y 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir   0  90)) +z 1e-10)
+  (check-within (dir+∆θdir +x (∆θdir   0 -90)) -z 1e-10)
   )
 
 (define (normalize-angle a)
@@ -59,7 +59,7 @@
 
 ;; make-initial-world : [-> World-State]
 (define (make-initial-world)
-  (world-state (dir 1 0 0) 0 (make-world-stream)))
+  (world-state +x 0 (make-world-stream)))
 
 (define max-∆θdir-component 8) ; angle in degrees
 (define max-∆∆θdir-component 4) ; angle in degrees
@@ -93,7 +93,7 @@
 
 (define sun
   (combine
-   (sunlight (dir 0 0 -1) (emitted "oldlace" 1))
+   (sunlight -z (emitted "oldlace" 1))
    (light (pos 0 0 50) (emitted "oldlace" 1000))
    (with-emitted
     (emitted "oldlace" 1)
@@ -108,7 +108,7 @@
    earth-sky-sun
    (transform
     pict3d
-    (my-point-at origin (make-dir 1 0 0) pos dir))))
+    (my-point-at origin +x pos dir))))
    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -136,9 +136,9 @@
 ;; stop-state? : [World-State N T -> Boolean]
 (define (stop-state? ws n t)
   (match-define (world-state _ a s) ws)
-  (cond [(trace (combine (get-tube+obstacles s (make-dir 1 0 0) 1))
+  (cond [(trace (combine (get-tube+obstacles s +x 1))
                 (transform-pos (make-pos -1 0 1) (rotate-x a))
-                (dir 1 0 0))
+                +x)
          #t]
         [else
          #f]))
@@ -148,7 +148,7 @@
   (match-define (world-state dir a s) ws)
   (with-earth-etc
    #:pos (pos 0 0 30) #:dir dir
-   (combine (rotate-x (basis 'camera (point-at (make-pos 0 0 1) (make-dir 1 0 0)))
+   (combine (rotate-x (basis 'camera (point-at (make-pos 0 0 1) +x))
                       a)
             (get-tube+obstacles s))))
 
@@ -164,7 +164,7 @@
   
 
 ;; get-tube+obstacles : Stream [Dir] [Natural] -> (Treeof Pict3d)
-(define (get-tube+obstacles s [dir (dir 1 0 0)] [n pieces-to-render-at-a-time])
+(define (get-tube+obstacles s [dir +x] [n pieces-to-render-at-a-time])
   (define (loop #:n n
                 #:s s
                 #:pict3ds pict3ds
@@ -195,7 +195,7 @@
        (define new-pict3d
          (combine cylinder
                   (transform (combine unpositioned-obstacles)
-                             (my-point-at origin (make-dir 1 0 0) pos dir))))
+                             (my-point-at origin +x pos dir))))
        (loop #:n (sub1 n)
              #:s (stream-rest s)
              #:pict3ds (cons new-pict3d pict3ds)
