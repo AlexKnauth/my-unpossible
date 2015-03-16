@@ -8,6 +8,7 @@
          racket/list
          "real-modulo.rkt"
          "parametric-cylinder.rkt"
+         "my-point-at.rkt"
          )
 (module+ test
   (require "testing.rkt"))
@@ -103,14 +104,11 @@
 
 ;; with-earth-etc : [Pict3d #:pos Pos #:dir Dir -> Pict3d]
 (define (with-earth-etc pict3d #:pos pos #:dir dir)
-  (define other-basis (gensym 'other-basis))
-  (weld
-   (combine earth-sky-sun
-            (basis 'earth-basis (point-at pos dir)))
-   '(earth-basis)
-   (combine pict3d
-            (basis other-basis (point-at origin (make-dir 1 0 0))))
-   (list other-basis)))
+  (combine
+   earth-sky-sun
+   (transform
+    pict3d
+    (my-point-at origin (make-dir 1 0 0) pos dir))))
    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -195,11 +193,9 @@
                                  (make-pos 3/5  1/5 3))
                       angle))))
        (define new-pict3d
-         (let* ([b1 (gensym 'b1)] [b2 (gensym 'b2)])
-           (weld (combine cylinder  (basis b1 (point-at pos dir)))
-                 (list b1)
-                 (combine unpositioned-obstacles (basis b2 (point-at origin (make-dir 1 0 0))))
-                 (list b2))))
+         (combine cylinder
+                  (transform (combine unpositioned-obstacles)
+                             (my-point-at origin (make-dir 1 0 0) pos dir))))
        (loop #:n (sub1 n)
              #:s (stream-rest s)
              #:pict3ds (cons new-pict3d pict3ds)
