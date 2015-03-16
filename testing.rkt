@@ -1,13 +1,11 @@
-#lang racket/base
+#lang sweet-exp racket/base
 
-(provide (all-from-out rackunit)
-         check-within
-         )
+provide all-from-out(rackunit)
+        check-within
 
-(require rackunit
-         "equal-within.rkt"
-         )
+require rackunit
+        "equal-within.rkt"
 
-(define-check (check-within a b ∆)
-  (check-true (equal?/within a b ∆)))
+define-check check-within(a b ∆)
+  check-true(equal?/within(a b ∆))
 
