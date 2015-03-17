@@ -11,15 +11,13 @@ define my-point-at(v1 v2 v3 v4 #:normalize? [normalize? #t])
     point-at(v3 v4 #:normalize? normalize?)
 
 module* test racket/base
-  (require (submod "..") rackunit pict3d racket/match syntax/parse/define (for-syntax racket/base))
-  (define-simple-macro (check-equal?/loc loc a b)
-    #:with stx (syntax/loc #'loc (check-equal? a b))
-    stx)
+  (require (submod "..") rackunit pict3d racket/match syntax/parse/define "with-loc.rkt" (for-syntax racket/base))
   define-simple-macro
     chk t-expr {ps ~and [p1 p2]} ...+
     test-begin
       define t t-expr
-      check-equal?/loc ps transform-pos(p1 t) p2
+      with-loc ps
+        check-equal? transform-pos(p1 t) p2
       ...
   check-equal? my-point-at(pos(0 0 0) pos(1 0 0)
                            pos(0 0 0) pos(1 0 0))
