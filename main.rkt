@@ -6,12 +6,12 @@
          racket/match
          racket/local
          racket/list
-         "real-modulo.rkt"
-         "parametric-cylinder.rkt"
-         "my-point-at.rkt"
+         "utils/real-modulo.rkt"
+         "utils/parametric-cylinder.rkt"
+         "utils/my-point-at.rkt"
          )
 (module+ test
-  (require "testing.rkt"))
+  (require "utils/testing.rkt"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
