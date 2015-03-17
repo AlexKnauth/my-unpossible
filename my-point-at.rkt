@@ -1,16 +1,12 @@
 #lang sweet-exp typed/racket/base
 
-provide from-to my-point-at
+provide my-point-at
 
 require pict3d
 
-: from-to : Affine Affine -> Affine
-define from-to(t1 t2)
-  affine-compose(t2 affine-inverse(t1))
-
 : my-point-at : Pos {Pos U Dir} Pos {Pos U Dir} [#:normalize? Boolean] -> Affine
 define my-point-at(v1 v2 v3 v4 #:normalize? [normalize? #t])
-  from-to
+  relocate
     point-at(v1 v2 #:normalize? normalize?)
     point-at(v3 v4 #:normalize? normalize?)
 
