@@ -11,7 +11,7 @@
          "utils/my-point-at.rkt"
          )
 (module+ test
-  (require "utils/testing.rkt"))
+  (require rackunit testing-utils/check-within))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
