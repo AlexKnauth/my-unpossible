@@ -8,6 +8,8 @@
     "math-lib"
     "sweet-exp"
     "my-cond"
+    "typed-racket-lib"
+    "unstable-contract-lib"
     ))
 
 (define bulid-deps
