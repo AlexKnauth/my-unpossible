@@ -12,7 +12,7 @@
     "unstable-contract-lib"
     ))
 
-(define bulid-deps
+(define build-deps
   '("rackunit-lib"
     "git://github.com/AlexKnauth/testing-utils"
     ))
