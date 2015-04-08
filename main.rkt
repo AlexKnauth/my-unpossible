@@ -7,6 +7,7 @@ require pict3d
         racket/local
         racket/list
         my-cond/iffy
+        (only-in typed/racket/base assert)
         "utils/real-modulo.rkt"
         "utils/parametric-cylinder.rkt"
         "utils/my-point-at.rkt"
@@ -28,7 +29,7 @@ module+ test
 ;; a ∆θDir is a (∆θdir Angle Angle) ; angles in degrees
 ;; an Obstacle is an Angle
 
-struct world-state (dir angle stream) #:transparent
+struct world-state (dir angle stream score) #:transparent
 struct piece (∆θdir obstacles) #:transparent
 struct ∆θdir (∆yθ ∆zθ) #:transparent
 
@@ -60,7 +61,7 @@ define normalize-angle(a)
 
 ;; make-initial-world : [-> World-State]
 define make-initial-world()
-  world-state[+x 0 make-world-stream()]
+  world-state[+x 0 make-world-stream() 0]
 
 define max-∆θdir-component 8 ; angle in degrees
 define max-∆∆θdir-component 4 ; angle in degrees
@@ -111,24 +112,49 @@ define with-earth-etc[pict3d #:pos pos #:dir dir]
 
 ;; main : [-> World-State]
 define main()
-  big-bang3d make-initial-world()
-    #:on-frame tick
-    #:stop-state? stop-state?
-    #:on-draw render-world
-    #:on-key handle-key
+  define ws
+    big-bang3d make-initial-world()
+      #:on-frame tick
+      #:stop-state? stop-state?
+      #:on-draw render-world
+      #:on-key handle-key
+  define score world-state-score(ws)
+  printf("score: ~a\n" score)
+  define old-high-score get-high-score()
+  record-high-score(score)
+  when {old-high-score < score}
+    printf("new high score! ~a -> ~a\n" old-high-score score)
+  ws
+
+;; record-high-score : Natural -> Void
+define record-high-score(new-score)
+  define high-score get-high-score()
+  define new-high-score max[high-score new-score]
+  with-output-to-file "high-score.txt" #:exists 'replace
+    λ () write(new-high-score)
+
+;; get-high-score : -> Natural
+define get-high-score()
+  assert
+    with-input-from-file "high-score.txt"
+      λ () read()
+    exact-nonnegative-integer?
+
+
 
 ;; tick : [World-State N T -> World-State]
 define tick(ws n t)
-  match-define world-state[dir a s] ws
-  define ∆θdir piece-∆θdir(stream-first(s))
+  match-define world-state[dir a s n] ws
+  match-define piece[∆θdir obst] stream-first(s)
   define new-dir dir+∆θdir[dir ∆θdir]
   struct-copy world-state ws
-    [dir new-dir]
-    [stream stream-rest(s)]
+    dir new-dir
+    stream stream-rest(s)
+    score {n + length(obst)}
 
 ;; stop-state? : [World-State N T -> Boolean]
 define stop-state?(ws n t)
-  match-define world-state[_ a s] ws
+  match-define world-state[_ a s _] ws
   my-cond
     if (trace combine(get-tube+obstacles[s +x 1])
               transform-pos[make-pos(-1 0 1) rotate-x(a)]
@@ -139,7 +165,7 @@ define stop-state?(ws n t)
 
 ;; render-world : [World-State N T -> Image]
 define render-world(ws n t)
-  match-define world-state[dir a s] ws
+  match-define world-state[dir a s _] ws
   with-earth-etc #:pos pos(0 0 30) #:dir dir
     combine
       rotate-x basis['camera point-at[pos(0 0 1) +x]] a
