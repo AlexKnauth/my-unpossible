@@ -1,23 +1,32 @@
-#lang sweet-exp racket/base
+#lang sweet-exp typed/racket/base
+
+provide all-defined-out()
 
 require pict3d
         only-in pict3d/universe big-bang3d
-        racket/stream
+        typed/racket/stream
         racket/match
         racket/local
         racket/list
-        my-cond/iffy
+        only-in my-cond/iffy my-cond if else-if
         "utils/real-modulo.rkt"
         "utils/parametric-cylinder.rkt"
         "utils/my-point-at.rkt"
-module+ test
-  require rackunit
-          testing-utils/check-within
+        for-syntax racket/base
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Data Definitions
 
+define-type World-State world-state
+define-type Piece piece
+define-type (Streamof a) (Sequenceof a)
+define-type Pieces (Streamof Piece)
+define-type ∆θDir ∆θdir
+define-type Angle Real
+define-type Obstacle Angle
+define-type Obstacles (Listof Angle)
+define-type Pict3d Pict3D
 ;; a World-State is a (world-state Dir Angle (Streamof Piece))
 ;; interp. a struct with a dir, an angle, and an infinite lazy stream of pieces
 ;; the dir represents the direction the tube and camera are pointing reletive to the earth.
@@ -28,20 +37,24 @@ module+ test
 ;; a ∆θDir is a (∆θdir Angle Angle) ; angles in degrees
 ;; an Obstacle is an Angle
 
-struct world-state (dir angle stream) #:transparent
-struct piece (∆θdir obstacles) #:transparent
-struct ∆θdir (∆yθ ∆zθ) #:transparent
+struct world-state ([dir : Dir] [angle : Angle] [stream : Pieces]) #:transparent
+struct piece ([∆θdir : ∆θdir] [obstacles : Obstacles]) #:transparent
+struct ∆θdir ([∆yθ : Angle] [∆zθ : Angle]) #:transparent
 
 define make-pos pos
 define make-dir dir
 
-;; dir+∆θdir : [Dir ∆θDir -> Dir]
+: dir+∆θdir : [Dir ∆θDir -> Dir]
 define dir+∆θdir[d ∆θd]
   define-values [yθ zθ] dir->angles(d)
   match-define ∆θdir(∆yθ ∆zθ) ∆θd
   angles->dir[{yθ + ∆yθ} {zθ + ∆zθ}]
 
-module+ test
+module* test racket/base
+  require (submod "..")
+          pict3d
+          rackunit
+          testing-utils/check-within
   check-within dir+∆θdir[+x ∆θdir(  0   0)] +x 1e-10
   check-within dir+∆θdir[+x ∆θdir( 90   0)] +y 1e-10
   check-within dir+∆θdir[+x ∆θdir(180   0)] -x 1e-10
@@ -49,6 +62,7 @@ module+ test
   check-within dir+∆θdir[+x ∆θdir(  0  90)] +z 1e-10
   check-within dir+∆θdir[+x ∆θdir(  0 -90)] -z 1e-10
 
+: normalize-angle : Angle -> Angle
 define normalize-angle(a)
   my-cond
     if {0 <= a} real-modulo[a 360]
@@ -58,7 +72,7 @@ define normalize-angle(a)
 
 ;; Constants
 
-;; make-initial-world : [-> World-State]
+: make-initial-world : [-> World-State]
 define make-initial-world()
   world-state[+x 0 make-world-stream()]
 
@@ -96,7 +110,7 @@ define sun
 define earth-sky-sun
   combine(earth sky sun)
 
-;; with-earth-etc : [Pict3d #:pos Pos #:dir Dir -> Pict3d]
+: with-earth-etc : [Pict3D #:pos Pos #:dir Dir -> Pict3D]
 define with-earth-etc[pict3d #:pos pos #:dir dir]
   combine
     earth-sky-sun
@@ -109,15 +123,18 @@ define with-earth-etc[pict3d #:pos pos #:dir dir]
 
 ;; Functions
 
-;; main : [-> World-State]
+: main : [-> World-State]
 define main()
-  big-bang3d make-initial-world()
+  (inst big-bang3d World-State) make-initial-world()
     #:on-frame tick
     #:stop-state? stop-state?
     #:on-draw render-world
     #:on-key handle-key
 
-;; tick : [World-State N T -> World-State]
+define-syntax N make-rename-transformer(#'Natural)
+define-syntax T make-rename-transformer(#'Real)
+
+: tick : [World-State N T -> World-State]
 define tick(ws n t)
   match-define world-state[dir a s] ws
   define ∆θdir piece-∆θdir(stream-first(s))
@@ -126,7 +143,7 @@ define tick(ws n t)
     [dir new-dir]
     [stream stream-rest(s)]
 
-;; stop-state? : [World-State N T -> Boolean]
+: stop-state? : [World-State N T -> Boolean]
 define stop-state?(ws n t)
   match-define world-state[_ a s] ws
   my-cond
@@ -137,7 +154,7 @@ define stop-state?(ws n t)
     else
       #f
 
-;; render-world : [World-State N T -> Image]
+: render-world : [World-State N T -> Pict3D]
 define render-world(ws n t)
   match-define world-state[dir a s] ws
   with-earth-etc #:pos pos(0 0 30) #:dir dir
@@ -145,19 +162,22 @@ define render-world(ws n t)
       rotate-x basis['camera point-at[pos(0 0 1) +x]] a
       get-tube+obstacles(s)
 
+: handle-key : [World-State N T String -> World-State]
 define handle-key(ws n t k)
   match k
     ["left" rotate-world-camera(ws -10)]
     ["right" rotate-world-camera(ws 10)]
     [_ ws]
 
+: rotate-world-camera : World-State Real -> World-State
 define rotate-world-camera(ws ∆a)
   struct-copy world-state ws
     [angle normalize-angle{world-state-angle(ws) + ∆a}]
 
 
-;; get-tube+obstacles : Stream [Dir] [Natural] -> (Treeof Pict3d)
+: get-tube+obstacles : [->* [(Streamof Piece)] [Dir Natural] (Listof Pict3d)]
 define get-tube+obstacles(s [dir +x] [n pieces-to-render-at-a-time])
+  : loop : #:n Natural #:s (Streamof Piece) #:pict3ds (Listof Pict3d) #:pos Pos #:dir Dir -> (Listof Pict3d)
   define
     loop #:n n
          #:s s
@@ -180,7 +200,7 @@ define get-tube+obstacles(s [dir +x] [n pieces-to-render-at-a-time])
               1.0
         define unpositioned-obstacles
           with-color rgba("gray")
-            for/list ([angle in-list(obstacles)])
+            for/list ([angle in-list(obstacles)]) : (Listof Pict3D)
               rotate-x rectangle[make-pos(1/5 -1/5 0)
                                  make-pos(3/5  1/5 3)]
                        angle
@@ -189,7 +209,7 @@ define get-tube+obstacles(s [dir +x] [n pieces-to-render-at-a-time])
             cylinder
             transform combine(unpositioned-obstacles)
                       my-point-at[origin +x pos dir]
-        loop #:n {n - 1}
+        loop #:n (assert {n - 1} exact-nonnegative-integer?)
              #:s stream-rest(s)
              #:pict3ds (cons new-pict3d pict3ds)
              #:pos new-pos
@@ -201,7 +221,7 @@ define get-tube+obstacles(s [dir +x] [n pieces-to-render-at-a-time])
        #:dir dir
 
 
-
+: make-world-stream : [#:counter Natural] -> Pieces
 define make-world-stream(#:counter [i world-stream-counter-start])
   my-cond
     if zero?(i)
@@ -214,38 +234,43 @@ define make-world-stream(#:counter [i world-stream-counter-start])
 
 
 
-;; random-∆θdir : [-> ∆θDir]
+: random-∆θdir : [-> ∆θDir]
 define random-∆θdir
   local
     group
+      : random-∆θdir : [-> ∆θDir]
       define random-∆θdir()
         ∆θdir[random-∆yθ() random-∆zθ()]
-      define ∆yθ 0
-      define ∆zθ 0
+      define ∆yθ : Real 0
+      define ∆zθ : Real 0
+      : random-∆yθ : [-> Real]
       define random-∆yθ()
         define new-∆yθ
           constrain #:min (- max-∆θdir-component) #:max max-∆θdir-component
             {∆yθ + {max-∆∆θdir-component * +/-random()}}
         set! ∆yθ new-∆yθ
         new-∆yθ
+      : random-∆zθ : [-> Real]
       define random-∆zθ()
         define new-∆zθ
           constrain #:min (- max-∆θdir-component) #:max max-∆θdir-component
             {∆zθ + {max-∆∆θdir-component * +/-random()}}
         set! ∆zθ new-∆zθ
         new-∆zθ
+      : +/- : [-> Integer]
       define +/-()
         {{2 * random(2)} - 1}
+      : +/-random : [-> Real]
       define +/-random()
         {+/-() * random()}
     random-∆θdir
 
-;; constrain : Real #:min Real #:max Real -> Real
+: constrain : Real #:min Real #:max Real -> Real
 define constrain[x #:min mn #:max mx]
   min[max[x mn] mx]
 
 
-;; random-obstacles : [-> (Listof Obstacle)]
+: random-obstacles : [-> (Listof Obstacle)]
 define random-obstacles()
   define o random(90)
   for/list ([i (in-range 4)])
