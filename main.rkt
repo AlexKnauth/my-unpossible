@@ -11,6 +11,7 @@ require pict3d
         "utils/real-modulo.rkt"
         "utils/parametric-cylinder.rkt"
         "utils/my-point-at.rkt"
+        "utils/file-read-write-proc.rkt"
 module+ test
   require rackunit
           testing-utils/check-within
@@ -130,15 +131,22 @@ define main()
 define record-high-score(new-score)
   define high-score get-high-score()
   define new-high-score max[high-score new-score]
-  with-output-to-file "high-score.rktd" #:exists 'replace
-    λ () write(new-high-score)
+  high-score-proc(new-high-score)
 
 ;; get-high-score : -> Natural
 define get-high-score()
-  assert
-    with-input-from-file "high-score.rktd"
-      λ () read()
-    exact-nonnegative-integer?
+  define val
+    high-score-proc()
+  my-cond
+    if eof-object?(val)
+      0
+    else-if exact-nonnegative-integer?(val)
+      val
+    else
+      error('high-score.rktd "expected a natural number, given ~s" val)
+
+define high-score-proc
+  make-file-read-write-proc("high-score.rktd")
 
 
 
