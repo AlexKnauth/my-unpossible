@@ -130,13 +130,13 @@ define main()
 define record-high-score(new-score)
   define high-score get-high-score()
   define new-high-score max[high-score new-score]
-  with-output-to-file "high-score.txt" #:exists 'replace
+  with-output-to-file "high-score.rktd" #:exists 'replace
     λ () write(new-high-score)
 
 ;; get-high-score : -> Natural
 define get-high-score()
   assert
-    with-input-from-file "high-score.txt"
+    with-input-from-file "high-score.rktd"
       λ () read()
     exact-nonnegative-integer?
 
