@@ -35,7 +35,7 @@
            [else
             (define dx (dir-cross dy dz))
             ;; Assemble the transformation to local coordinates
-            (define tr (cols->affine dx dy dz origin))
+            (define tr (affine dx dy dz origin))
             ;; For each angle...
             (for/list : (Listof Vertex) ([j  (in-range (+ m 1))])
               (define θ (* θstep (fl j)))
