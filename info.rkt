@@ -10,10 +10,14 @@
     "my-cond"
     "typed-racket-lib"
     "unstable-contract-lib"
+    "alexis-util"
+    "lenses"
     ))
 
 (define build-deps
   '("rackunit-lib"
     "git://github.com/AlexKnauth/testing-utils"
+    "afl"
+    "postfix-dot-notation"
     ))
 

@@ -12,6 +12,7 @@ require pict3d
         "utils/parametric-cylinder.rkt"
         "utils/my-point-at.rkt"
         "utils/file-read-write-proc.rkt"
+        "utils/lens.rkt"
 module+ test
   require rackunit
           testing-utils/check-within
@@ -30,9 +31,9 @@ module+ test
 ;; a ∆θDir is a (∆θdir Angle Angle) ; angles in degrees
 ;; an Obstacle is an Angle
 
-struct world-state (dir angle stream score) #:transparent
-struct piece (∆θdir obstacles) #:transparent
-struct ∆θdir (∆yθ ∆zθ) #:transparent
+struct/lens world-state (dir angle stream score)
+struct/lens piece (∆θdir obstacles)
+struct/lens ∆θdir (∆yθ ∆zθ)
 
 define make-pos pos
 define make-dir dir
@@ -154,11 +155,13 @@ define high-score-proc
 define tick(ws n t)
   match-define world-state[dir a s n] ws
   match-define piece[∆θdir obst] stream-first(s)
-  define new-dir dir+∆θdir[dir ∆θdir]
-  struct-copy world-state ws
-    dir new-dir
-    stream stream-rest(s)
-    score {n + length(obst)}
+  lens-transform** ws
+    world-state-dir dir
+      dir+∆θdir[dir ∆θdir]
+    world-state-stream s
+      stream-rest(s)
+    world-state-score n
+      {n + length(obst)}
 
 ;; stop-state? : [World-State N T -> Boolean]
 define stop-state?(ws n t)
@@ -186,8 +189,9 @@ define handle-key(ws n t k)
     [_ ws]
 
 define rotate-world-camera(ws ∆a)
-  struct-copy world-state ws
-    [angle normalize-angle{world-state-angle(ws) + ∆a}]
+  lens-transform** ws
+    world-state-angle a
+      normalize-angle{a + ∆a}
 
 
 ;; get-tube+obstacles : Stream [Dir] [Natural] -> (Treeof Pict3d)
