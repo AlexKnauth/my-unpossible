@@ -20,7 +20,7 @@ define-simple-macro
     ...
 
 define-simple-macro
-  struct/lens s:id (fld:id ...)
+  struct/lens s:id (fld:id ...) option ...
   #:with [[s-fld s-fld-set] ...]
   for/list ([fld (in-list (syntax->list #'(fld ...)))])
     list (format-id #'s "~a-~a" #'s fld #:source fld)
@@ -31,7 +31,7 @@ define-simple-macro
   (datum->syntax #'s `(,#'define-struct-updaters ,(syntax-e #'s)))
   splicing-local
     group
-      splicing-local [(struct s (fld ...) #:transparent)]
+      splicing-local [(struct s (fld ...) option ...)]
         def-struct-updaters
         defrename [-s s] [-s-fld s-fld] ...
     defrename [s -s]
@@ -48,7 +48,7 @@ define-simple-macro
   (lens-transform* tgt lns/f ... ...)
 
 module+ test
-  struct/lens foo (a b c)
+  struct/lens foo (a b c) #:transparent
   define f (foo 1 2 3)
   check-equal? (lens-transform* f foo-a #λ(* 100 %)) (foo 100 2 3)
   check-equal? (lens-transform* f foo-b #λ(* 100 %)) (foo 1 200 3)

@@ -31,9 +31,9 @@ module+ test
 ;; a ∆θDir is a (∆θdir Angle Angle) ; angles in degrees
 ;; an Obstacle is an Angle
 
-struct/lens world-state (dir angle stream score)
-struct/lens piece (∆θdir obstacles)
-struct/lens ∆θdir (∆yθ ∆zθ)
+struct/lens world-state (dir angle stream score) #:transparent
+struct/lens piece (∆θdir obstacles) #:transparent
+struct/lens ∆θdir (∆yθ ∆zθ) #:transparent
 
 define make-pos pos
 define make-dir dir
