@@ -4,8 +4,7 @@ provide struct/lens lens-transform**
 
 require racket/splicing
         syntax/parse/define
-        lenses/applicable
-        only-in lenses lens-transform*
+        lens/applicable
         alexis/util/struct
         for-syntax racket/base
                    syntax/parse
