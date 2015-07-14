@@ -11,7 +11,7 @@
     "typed-racket-lib"
     "unstable-contract-lib"
     "alexis-util"
-    "lenses"
+    "lens"
     ))
 
 (define build-deps
