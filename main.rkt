@@ -156,11 +156,11 @@ define tick(ws n t)
   match-define world-state[dir a s n] ws
   match-define piece[∆θdir obst] stream-first(s)
   lens-transform** ws
-    world-state-dir dir
+    world-state-dir-lens dir
       dir+∆θdir[dir ∆θdir]
-    world-state-stream s
+    world-state-stream-lens s
       stream-rest(s)
-    world-state-score n
+    world-state-score-lens n
       {n + length(obst)}
 
 ;; stop-state? : [World-State N T -> Boolean]
@@ -190,7 +190,7 @@ define handle-key(ws n t k)
 
 define rotate-world-camera(ws ∆a)
   lens-transform** ws
-    world-state-angle a
+    world-state-angle-lens a
       normalize-angle{a + ∆a}
 
 
