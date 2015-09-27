@@ -6,7 +6,6 @@ require racket/splicing
         syntax/parse/define
         lens/applicable
         alexis/util/struct
-        unstable/lens/struct
         for-syntax racket/base
                    syntax/parse
                    racket/syntax
